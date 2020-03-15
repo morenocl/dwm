@@ -248,7 +248,7 @@ drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int
 }
 
 int
-drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert)
+drw_text(Drw *drw, Drawable bartrans, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert)
 {
     char buf[1024];
     int ty;
@@ -271,8 +271,12 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
     if (!render) {
         w = ~w;
     } else {
-        XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColFg : ColBg].pixel);
-        XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w, h);
+        if (bartrans) {
+            XCopyArea(drw->dpy, bartrans, drw->drawable, drw->gc, x, y, w, h, x, y);
+        } else {
+            XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColFg : ColBg].pixel);
+            XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w, h);
+        }
         d = XftDrawCreate(drw->dpy, drw->drawable,
                           DefaultVisual(drw->dpy, drw->screen),
                           DefaultColormap(drw->dpy, drw->screen));
@@ -393,7 +397,7 @@ drw_fontset_getwidth(Drw *drw, const char *text)
 {
     if (!drw || !drw->fonts || !text)
         return 0;
-    return drw_text(drw, 0, 0, 0, 0, 0, text, 0);
+    return drw_text(drw, 0, 0, 0, 0, 0, 0, text, 0);
 }
 
 void
